@@ -83,7 +83,7 @@ if __name__ == "__main__":
                         freeze_param = False
                         break
                 if freeze_param:
-                        parameter.requires_grad_(False)
+                    parameter.requires_grad_(False)
 
         # Set the loss
         pose_loss = CameraPoseLoss(config).to(device)
@@ -106,7 +106,6 @@ if __name__ == "__main__":
             transform = utils.train_transforms.get('baseline')
 
         dataset = CameraPoseDataset(args.dataset_path, args.labels_file, transform)
-
 
         loader_params = {'batch_size': config.get('batch_size'),
                                   'shuffle': True,
@@ -137,10 +136,10 @@ if __name__ == "__main__":
                 n_samples += batch_size
                 n_total_samples += batch_size
 
-                if freeze: # For TransPoseNet
+                if freeze: 
                     model.eval()
                     with torch.no_grad():
-                        transformers_res = model.forward_transformers(minibatch)
+                        backbone_res = model.forward_backbone(minibatch)
                     model.train()
 
                 # Zero the gradients
@@ -148,7 +147,7 @@ if __name__ == "__main__":
 
                 # Forward pass to estimate the pose
                 if freeze:
-                    res = model.forward_heads(transformers_res)
+                    res = model.forward_heads(backbone_res)
                 else:
                     res = model(minibatch)
 
@@ -183,8 +182,8 @@ if __name__ == "__main__":
         torch.save(model.state_dict(), checkpoint_prefix + '_final.pth'.format(epoch))
 
         # Plot the loss function
-        #loss_fig_path = checkpoint_prefix + "_loss_fig.png"
-        #utils.plot_loss_func(sample_count, loss_vals, loss_fig_path)
+        loss_fig_path = checkpoint_prefix + "_loss_fig.png"
+        utils.plot_loss_func(sample_count, loss_vals, loss_fig_path)
 
     else: # Test
         # Set to eval mode

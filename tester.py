@@ -27,7 +27,7 @@ parser.add_argument(
     '--devices', type=str, nargs='+', default=['cuda:0'],
     help='which devices to use on local machine')
 parser.add_argument(
-    '--checkpoint', type=str, default='IN1K-vit.h.14-300e.pth.tar',
+    '--checkpoint', type=str, default='checkpoint/IN1K-vit.h.14-300e.pth.tar',
     help='checkpoint to load for testing')
 
 # Print the layers/modules of the model for inspection
@@ -51,7 +51,7 @@ def load_backbone(load_path):
     
     encoder.to('cuda:0')
     print_model_layers(encoder)
-    #input("Press Enter to continue...")
+    print("done!")
 
 if __name__ == '__main__':
     args = parser.parse_args()

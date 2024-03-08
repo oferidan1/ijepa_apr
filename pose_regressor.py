@@ -45,5 +45,16 @@ class PoseRegressor(nn.Module):
         p_x = self.head_x(x)
         p_q = self.head_q(x)
         return {'pose': torch.cat((p_x, p_q), dim=1)}
+    
+    def forward_backbone(self, data):
+        x = self.backbone(data['img'])
+        x = self.avg_pooling_2d(x)
+        x = x.flatten(start_dim=1)        
+        return x
+    
+    def forward_heads(self, x):
+        p_x = self.head_x(x)
+        p_q = self.head_q(x)
+        return {'pose': torch.cat((p_x, p_q), dim=1)}
         
           

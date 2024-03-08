@@ -13,8 +13,8 @@
 	"eps": 1e-10,
 	"lr_scheduler_step_size": 200,
 	"lr_scheduler_gamma": 0.5,
-	"freeze": false,
-	"freeze_exclude_phrase": "regressor_head_rot",
+	"freeze": true,
+	"freeze_exclude_phrase": "head",
 	"n_epochs": 600
 }
 
