@@ -23,20 +23,19 @@ class PoseRegressor(nn.Module):
         """
         :param config: (dict) configuration to determine behavior
         """
-        super(PoseRegressor, self).__init__()
-        self.backbone = load_backbone(backbone_path)
+        super(PoseRegressor, self).__init__()        
         backbone_dim = 1280
-        latent_dim = 1024
+        latent_dim = 1280
         self.head_x = nn.Sequential(nn.Linear(backbone_dim, latent_dim), nn.GELU(), nn.Linear(latent_dim, 3))                
         self.head_q = nn.Sequential(nn.Linear(backbone_dim, latent_dim), nn.GELU(), nn.Linear(latent_dim, 4))     
-        
+        self._reset_parameters()
+        self.backbone = load_backbone(backbone_path)        
         self.avg_pooling_2d = nn.AdaptiveAvgPool2d((1,backbone_dim))          
         
-        # Initialize FC layers
-        for m in list(self.modules()):
-            if isinstance(m, nn.Linear):
-                torch.nn.init.kaiming_normal_(m.weight) 
-        
+    def _reset_parameters(self):
+        for p in self.parameters():
+            if p.dim() > 1:
+                nn.init.xavier_uniform_(p)
 
     def forward(self, data):
         x = self.backbone(data['img'])
