@@ -25,6 +25,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--backbone_path", help="path to backbone .pth", default="checkpoint/IN1K-vit.h.14-300e.pth.tar")
     arg_parser.add_argument("--dataset_path", help="path to the physical location of the dataset", default="F:/CambridgeLandmarks")
     arg_parser.add_argument("--labels_file", help="path to a file mapping images to their poses", default="pose/datasets/CambridgeLandmarks/abs_cambridge_pose_sorted.csv_ShopFacade_train.csv")
+    arg_parser.add_argument("--test_labels_file", help="path to a file mapping images to their poses", default="pose/datasets/CambridgeLandmarks/abs_cambridge_pose_sorted.csv_ShopFacade_test.csv")
     arg_parser.add_argument("--checkpoint_path", help="path to a pre-trained model (should match the model indicated in model_name")
     arg_parser.add_argument("--experiment", help="a short string to describe the experiment/commit used")
     arg_parser.add_argument("--gpu", help="gpu id", default="0")
@@ -191,7 +192,7 @@ if __name__ == "__main__":
 
         # Set the dataset and data loader
         transform = utils.test_transforms.get('baseline')
-        dataset = CameraPoseDataset(args.dataset_path, args.labels_file, transform)
+        dataset = CameraPoseDataset(args.dataset_path, args.test_labels_file, transform)
         loader_params = {'batch_size': 1,
                          'shuffle': False,
                          'num_workers': config.get('n_workers')}
