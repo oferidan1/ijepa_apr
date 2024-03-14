@@ -26,14 +26,14 @@ The entry point for training and testing is the main.py script in the root direc
   ```
   For example, in order to train TransPoseNet on the ShopFacade scene from the CambridgeLandmarks dataset: 
   ```
-python main.py --mode=train --dataset_path=<path to the CambridgeLandmarks dataset> ./datasets/CambridgeLandmarks/abs_cambridge_pose_sorted.csv_ShopFacade_train.csv
+python main_apr.py --mode=train --dataset_path=<path to the CambridgeLandmarks dataset> ./datasets/CambridgeLandmarks/abs_cambridge_pose_sorted.csv_ShopFacade_train.csv
   ```
   Your checkpoints (.pth file saved based on the number you specify in the configuration file) and log file
   will be saved under an 'out' folder.
   
   In order to test your model, for example on the the ShopFacade scene:
   ```
-python main.py --mode=test --dataset_path=<path to the CambridgeLandmarks dataset> ./datasets/CambridgeLandmarks/abs_cambridge_pose_sorted.csv_ShopFacade_test.csv --checkpoint_path <path to .pth>
+python main_apr.py --mode=test --dataset_path=<path to the CambridgeLandmarks dataset> ./datasets/CambridgeLandmarks/abs_cambridge_pose_sorted.csv_ShopFacade_test.csv --checkpoint_path <path to .pth>
   ```
  
  download ijepa pre-trained model and put in checkpoint: https://dl.fbaipublicfiles.com/ijepa/IN1K-vit.h.14-300e.pth.tar
