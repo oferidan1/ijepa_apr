@@ -15,7 +15,9 @@ conda activate loc
 ```
 
 ---
-
+download i-jepa checkpoint from https://dl.fbaipublicfiles.com/ijepa/IN1K-vit.h.14-300e.pth.tar
+wget https://dl.fbaipublicfiles.com/ijepa/IN1K-vit.h.14-300e.pth.tar
+copy to 'checkpoint'
 ### Usage
 
 The entry point for training and testing is the main.py script in the root directory
