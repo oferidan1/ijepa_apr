@@ -147,7 +147,8 @@ def main(args, resume_preempt=False):
     latest_path = os.path.join(folder, f'{tag}-latest.pth.tar')
     load_path = None
     if load_model:
-        load_path = os.path.join(folder, r_file) if r_file is not None else latest_path
+        #load_path = os.path.join(folder, r_file) if r_file is not None else latest_path
+        load_path = 'checkpoint\IN1K-vit.h.14-300e.pth.tar'
 
     # -- make csv_logger
     csv_logger = CSVLogger(log_file,

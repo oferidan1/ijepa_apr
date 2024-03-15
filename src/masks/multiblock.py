@@ -12,6 +12,10 @@ from multiprocessing import Value
 from logging import getLogger
 
 import torch
+import os
+import numpy as np
+from PIL import Image
+from matplotlib import pyplot as plt
 
 _GLOBAL_SEED = 0
 logger = getLogger()
@@ -108,6 +112,72 @@ class MaskCollator(object):
         mask_complement[top:top+h, left:left+w] = 0
         # --
         return mask, mask_complement
+    
+    def _sample_block_mask_superpoints(self, b_size, cdf, x_bin_midpoints, y_bin_midpoints):
+        h, w = b_size
+        # --
+        # -- Loop to sample masks until we find a valid one
+        tries = 0
+        timeout = og_timeout = 20
+        valid_mask = False
+        top100, left100 = self._random_from_cdf(cdf, x_bin_midpoints, y_bin_midpoints, 100) 
+        i = 0
+        while not valid_mask:            
+            # -- Sample block top-left corner
+            rand_i = torch.randint(0, 100, (1,))
+            top = top100[rand_i]
+            left = left100[rand_i]
+            if top >= self.height - h:
+                top = self.height - h - 1
+            if left >= self.width - w:
+                left = self.width - w - 1                
+            #top = torch.randint(0, self.height - h, (1,))
+            #left = torch.randint(0, self.width - w, (1,))
+            mask = torch.zeros((self.height, self.width), dtype=torch.int32)
+            mask[top:top+h, left:left+w] = 1
+            mask = torch.nonzero(mask.flatten())
+            # -- If mask too small try again
+            valid_mask = len(mask) > self.min_keep
+            if not valid_mask:
+                timeout -= 1
+                if timeout == 0:
+                    tries += 1
+                    timeout = og_timeout
+                    logger.warning(f'Mask generator says: "Valid mask not found, decreasing acceptable-regions [{tries}]"')
+        mask = mask.squeeze()
+        # --
+        mask_complement = torch.ones((self.height, self.width), dtype=torch.int32)
+        mask_complement[top:top+h, left:left+w] = 0
+        # --
+        return mask, mask_complement
+    
+    def _build_cdf_from_keypoints(self, img_path):
+        superpoint_path = 'F:/imagenet/superpoint/'
+        file_name = os.path.splitext(os.path.basename(img_path))[0]
+        pose_name = superpoint_path + file_name + '.npy'
+        pose = np.load(pose_name, allow_pickle=True)
+        keypoints = pose.item().get('keypoints')[0]
+        scores = pose.item().get('scores')[0]
+        k_x = keypoints[:,0].cpu().numpy()
+        k_y = keypoints[:,1].cpu().numpy()
+        hist, x_bins, y_bins = np.histogram2d(k_x, k_y, bins=(16,16))
+        x_bin_midpoints = x_bins[:-1] + np.diff(x_bins)/2
+        y_bin_midpoints = y_bins[:-1] + np.diff(y_bins)/2
+        cdf = np.cumsum(hist.ravel())
+        cdf = cdf / cdf[-1]
+        
+        return cdf, x_bin_midpoints, y_bin_midpoints
+
+    def _random_from_cdf(self, cdf, x_bin_midpoints, y_bin_midpoints, n):        
+        values = np.random.rand(n)
+        value_bins = np.searchsorted(cdf, values)
+        x_idx, y_idx = np.unravel_index(value_bins,
+                                        (len(x_bin_midpoints),
+                                        len(y_bin_midpoints)))
+        random_from_cdf = np.column_stack((x_bin_midpoints[x_idx],
+                                        y_bin_midpoints[y_idx]))
+        new_x, new_y = random_from_cdf.T
+        return (new_x//16).astype(int), (new_y//16).astype(int)
 
     def __call__(self, batch):
         '''
@@ -137,11 +207,12 @@ class MaskCollator(object):
         collated_masks_pred, collated_masks_enc = [], []
         min_keep_pred = self.height * self.width
         min_keep_enc = self.height * self.width
-        for _ in range(B):
-
+        
+        for b in range(B):     
+            cdf, x_bin_midpoints, y_bin_midpoints = self._build_cdf_from_keypoints(batch[b][2])
             masks_p, masks_C = [], []
             for _ in range(self.npred):
-                mask, mask_C = self._sample_block_mask(p_size)
+                mask, mask_C = self._sample_block_mask_superpoints(p_size, cdf, x_bin_midpoints, y_bin_midpoints)
                 masks_p.append(mask)
                 masks_C.append(mask_C)
                 min_keep_pred = min(min_keep_pred, len(mask))
