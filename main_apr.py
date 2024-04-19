@@ -89,6 +89,7 @@ if __name__ == "__main__":
 
         # Set the loss
         pose_loss = CameraPoseLoss(config).to(device)
+        pose_loss_valid = CameraPoseLoss(config).to(device)
 
         # Set the optimizer and scheduler
         params = list(model.parameters()) + list(pose_loss.parameters())
@@ -114,6 +115,15 @@ if __name__ == "__main__":
                                   'num_workers': config.get('n_workers')}
         dataloader = torch.utils.data.DataLoader(dataset, **loader_params)
 
+        #validation loader
+        transform_valid = utils.test_transforms.get('baseline')
+        dataset_valid = CameraPoseDataset(args.dataset_path, args.test_labels_file, transform_valid)
+        loader_params = {'batch_size': config.get('batch_size'),
+                         'shuffle': False,
+                         'num_workers': config.get('n_workers')}
+        dataloader_valid = torch.utils.data.DataLoader(dataset_valid, **loader_params)
+
+
         # Get training details
         n_freq_print = config.get("n_freq_print")
         n_freq_checkpoint = config.get("n_freq_checkpoint")
@@ -124,6 +134,7 @@ if __name__ == "__main__":
         n_total_samples = 0.0
         loss_vals = []
         sample_count = []
+        best_valid_loss = 1000000000
         for epoch in range(n_epochs):
 
             # Resetting temporal loss used for logging
@@ -176,6 +187,24 @@ if __name__ == "__main__":
             # Save checkpoint
             if (epoch % n_freq_checkpoint) == 0 and epoch > 0:
                 torch.save(model.state_dict(), checkpoint_prefix + '_checkpoint-{}.pth'.format(epoch))
+
+            #validation
+            with torch.no_grad():
+                valid_loss = 0
+                for i, minibatch in enumerate(dataloader_valid, 0):
+                    for k, v in minibatch.items():
+                        minibatch[k] = v.to(device).to(dtype=torch.float32)
+                    gt_pose = minibatch.get('pose')
+                    # Forward pass to predict the pose
+                    est_pose = model(minibatch).get('pose')
+                    # Evaluate error
+                    criterion = pose_loss_valid(est_pose, gt_pose)
+                    valid_loss += criterion.item()
+                    if i > 100:
+                        break
+            if valid_loss < best_valid_loss:
+                torch.save(model.state_dict(), checkpoint_prefix + '_checkpoint_best.pth')
+                best_valid_loss = valid_loss
 
             # Scheduler update
             scheduler.step()
