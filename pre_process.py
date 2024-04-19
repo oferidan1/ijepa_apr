@@ -4,6 +4,7 @@ from src.datasets.imagenet1k import make_imagenet1k
 from src.superpoint import SuperPoint
 import os
 import numpy as np
+import cv2
 
 def run_superpoint():
     device = 'cuda:0'
@@ -47,8 +48,21 @@ def run_superpoint():
         file_name = os.path.splitext(os.path.basename(img_path[0]))[0]
         out_name  = out_path + file_name + '.npy'
         np.save(out_name, pred0)          
-            
+
+def run_canny():
+    filename = "frame00001.jpg"
+    img = cv2.imread(filename, 0)  # read image as grayscale
+    blurred_img = cv2.blur(img, ksize=(5, 5))
+    med_val = np.median(img)
+    lower = int(max(0, 0.7 * med_val))
+    upper = int(min(255, 1.3 * med_val))
+    canny = cv2.Canny(image=img, threshold1=lower, threshold2=upper)
+    #canny = cv2.Canny(img, 85, 255)
+    cv2.imwrite('image1.png', canny)
+
+
 
 if __name__ == '__main__':
-    run_superpoint()
+    #run_superpoint()
+    run_canny()
     
