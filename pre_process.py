@@ -56,7 +56,7 @@ def run_canny():
     med_val = np.median(img)
     lower = int(max(0, 0.7 * med_val))
     upper = int(min(255, 1.3 * med_val))
-    canny = cv2.Canny(image=img, threshold1=lower, threshold2=upper)
+    canny = cv2.Canny(image=blurred_img, threshold1=lower, threshold2=upper)
     #canny = cv2.Canny(img, 85, 255)
     cv2.imwrite('image1.png', canny)
 
