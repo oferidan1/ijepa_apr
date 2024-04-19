@@ -13,14 +13,13 @@ import pprint
 import yaml
 
 from src.utils.distributed import init_distributed
-from src.train import main as app_main
-import os
+from src.train_2 import main as app_main
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
     '--fname', type=str,
     help='name of config file to load',
-    default='configs/cambridge_bigmask_vith14_ep300.yaml')
+    default='configs/cambridge_vith14_ep300.yaml')
 parser.add_argument(
     '--devices', type=str, nargs='+', default=['cuda:0'],
     help='which devices to use on local machine')
@@ -55,18 +54,10 @@ def process_main(rank, fname, world_size, devices):
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    
-    abspath = os.path.abspath(__file__)
-    dname = os.path.dirname(abspath)
-    os.chdir(dname)
 
     num_gpus = len(args.devices)
-    
-    #unremark for debugging
-    #process_main(0, args.fname, num_gpus, args.devices)        
-    
     mp.set_start_method('spawn')
-    
+
     for rank in range(num_gpus):
         mp.Process(
             target=process_main,

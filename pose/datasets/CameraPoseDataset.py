@@ -34,7 +34,37 @@ class CameraPoseDataset(Dataset):
         sample = {'img': img, 'pose': pose}
         return sample
 
+class CambridgeDataset(Dataset):
+    """
+        A class representing a dataset of images and their poses
+    """
 
+    def __init__(self, dataset_path, labels_file, data_transform=None):
+        """
+        :param dataset_path: (str) the path to the dataset
+        :param labels_file: (str) a file with images and their path labels
+        :param data_transform: (Transform object) a torchvision transform object
+        :return: an instance of the class
+        """
+        super(CambridgeDataset, self).__init__()
+        self.img_paths, self.poses = read_labels_file(labels_file, dataset_path)
+        self.dataset_size = self.poses.shape[0]
+        self.transform = data_transform
+    def __len__(self):
+        return self.dataset_size
+
+    def __getitem__(self, idx):
+        img = imread(self.img_paths[idx])
+        pose = self.poses[idx]
+        if self.transform:
+            img = self.transform(img)
+        path = self.img_paths[idx]
+        
+        return img, pose, path
+        
+        
+        
+        
 def read_labels_file(labels_file, dataset_path):
     df = pd.read_csv(labels_file)
     imgs_paths = [join(dataset_path, path) for path in df['img_path'].values]

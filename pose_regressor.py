@@ -3,9 +3,9 @@ import torch.nn.functional as F
 import torch.nn as nn
 from src.models.vision_transformer import vit_huge
 
-def load_backbone(load_path):    
+def load_backbone(load_path, patch_size):    
     # Initialize the ViT-H model with the specified patch size and resolution
-    encoder = vit_huge(patch_size=14, num_classes=1000)  # Adjust num_classes if needed
+    encoder = vit_huge(patch_size, num_classes=1000)  # Adjust num_classes if needed
     ckpt = torch.load(load_path, map_location=torch.device('cpu'))
     pretrained_dict = ckpt['encoder']
 
@@ -19,7 +19,7 @@ class PoseRegressor(nn.Module):
     """
     A class to represent camera pose regressor
     """
-    def __init__(self, backbone_path, config):
+    def __init__(self, backbone_path,patch_size, config):
         """
         :param config: (dict) configuration to determine behavior
         """
@@ -29,7 +29,7 @@ class PoseRegressor(nn.Module):
         self.head_x = nn.Sequential(nn.Linear(backbone_dim, latent_dim), nn.GELU(), nn.Linear(latent_dim, 3))                
         self.head_q = nn.Sequential(nn.Linear(backbone_dim, latent_dim), nn.GELU(), nn.Linear(latent_dim, 4))     
         self._reset_parameters()
-        self.backbone = load_backbone(backbone_path)        
+        self.backbone = load_backbone(backbone_path, patch_size)        
         self.avg_pooling_2d = nn.AdaptiveAvgPool2d((1,backbone_dim))          
         
     def _reset_parameters(self):

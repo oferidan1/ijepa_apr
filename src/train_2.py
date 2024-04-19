@@ -29,7 +29,7 @@ import torch.multiprocessing as mp
 import torch.nn.functional as F
 from torch.nn.parallel import DistributedDataParallel
 
-from src.masks.multiblock import MaskCollator as MBMaskCollator
+from src.masks.multiblock2 import MaskCollator as MBMaskCollator
 from src.masks.utils import apply_masks
 from src.utils.distributed import (
     init_distributed,
@@ -53,7 +53,7 @@ from src.transforms import make_transforms
 # --
 log_timings = True
 log_freq = 10
-checkpoint_freq = 150
+checkpoint_freq = 50
 # --
 
 _GLOBAL_SEED = 0
@@ -191,6 +191,7 @@ def main(args, resume_preempt=False):
         color_jitter=color_jitter)
 
     # -- init data-loaders/samplers
+    # -- init data-loaders/samplers
     data = 'CambridgeDataset'
     if data == 'imagenet':
         _, unsupervised_loader, unsupervised_sampler = make_imagenet1k(
@@ -222,7 +223,6 @@ def main(args, resume_preempt=False):
         pin_memory=pin_mem,
         num_workers=num_workers,
         persistent_workers=False)
-    
     ipe = len(unsupervised_loader)
 
     # -- init optimizer and scheduler

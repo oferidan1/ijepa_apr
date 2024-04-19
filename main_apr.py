@@ -23,12 +23,13 @@ if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser()    
     arg_parser.add_argument("--mode", help="train or eval", default='train')
     arg_parser.add_argument("--backbone_path", help="path to backbone .pth", default="checkpoint/IN1K-vit.h.14-300e.pth.tar")
-    arg_parser.add_argument("--dataset_path", help="path to the physical location of the dataset", default="F:/CambridgeLandmarks")
+    arg_parser.add_argument("--dataset_path", help="path to the physical location of the dataset", default="/dsi/scratch/home/dsi/rinaVeler/datasets")
     arg_parser.add_argument("--labels_file", help="path to a file mapping images to their poses", default="pose/datasets/CambridgeLandmarks/abs_cambridge_pose_sorted.csv_ShopFacade_train.csv")
     arg_parser.add_argument("--test_labels_file", help="path to a file mapping images to their poses", default="pose/datasets/CambridgeLandmarks/abs_cambridge_pose_sorted.csv_ShopFacade_test.csv")
     arg_parser.add_argument("--checkpoint_path", help="path to a pre-trained model (should match the model indicated in model_name")
     arg_parser.add_argument("--experiment", help="a short string to describe the experiment/commit used")
     arg_parser.add_argument("--gpu", help="gpu id", default="0")
+    arg_parser.add_argument("--patch_size", help="ijepa_patchsize", type= int, default= 14)
 
     args = arg_parser.parse_args()
     
@@ -61,7 +62,7 @@ if __name__ == "__main__":
     device = torch.device(device_id)
 
     # Create the model
-    model = PoseRegressor(args.backbone_path, config).to(device)
+    model = PoseRegressor(args.backbone_path, args.patch_size,config).to(device)
     # Load the checkpoint if needed
     if args.checkpoint_path:
         model.load_state_dict(torch.load(args.checkpoint_path, map_location=device_id))
@@ -119,7 +120,7 @@ if __name__ == "__main__":
         n_epochs = config.get("n_epochs")
 
         # Train
-        checkpoint_prefix = join(utils.create_output_dir('out'),utils.get_stamp_from_log())
+        checkpoint_prefix = join(utils.create_output_dir('bigmask'),utils.get_stamp_from_log())
         n_total_samples = 0.0
         loss_vals = []
         sample_count = []
@@ -224,7 +225,7 @@ if __name__ == "__main__":
                     stats[i, 0],  stats[i, 1],  stats[i, 2]))
 
         # Record overall statistics
-        logging.info("Performance of {} on {}".format(args.checkpoint_path, args.labels_file))
+        logging.info("Performance of {} on {}".format(args.checkpoint_path, args.test_labels_file))
         logging.info("Median pose error: {:.3f}[m], {:.3f}[deg]".format(np.nanmedian(stats[:, 0]), np.nanmedian(stats[:, 1])))
         logging.info(
             "Var pose error: {:.3f}[m], {:.3f}[deg]".format(np.nanstd(stats[:, 0])**2, np.nanstd(stats[:, 1])**2))
