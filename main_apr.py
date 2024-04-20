@@ -130,7 +130,7 @@ if __name__ == "__main__":
         n_epochs = config.get("n_epochs")
 
         # Train
-        checkpoint_prefix = join(utils.create_output_dir('bigmask'),utils.get_stamp_from_log())
+        checkpoint_prefix = join(utils.create_output_dir('out'),utils.get_stamp_from_log())
         n_total_samples = 0.0
         loss_vals = []
         sample_count = []
