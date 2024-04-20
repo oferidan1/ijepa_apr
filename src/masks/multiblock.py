@@ -181,6 +181,25 @@ class MaskCollator(object):
                     for y in range(j,j+patch_size[1]):
                         count[i,j] += patch_kp[x,y]
         return count
+    
+    def _count_matrix_from_canny(self, img_path, patch_size):
+        canny_path = '/dsi/scratch/home/dsi/rinaVeler/datasets/canny/'
+        file_name = img_path.split(os.sep)[-3]+'_'+img_path.split(os.sep)[-2]+'_'+os.path.splitext(os.path.basename(img_path))[0]
+        canny_name = canny_path + file_name + '.npy'
+        canny = np.load(canny_name, allow_pickle=True)
+        patch_edg = torch.zeros(self.height, self.width)
+        for i in range(self.height):
+            for j in range(self.width):
+                patch_edg[i,j] = torch.sum(canny[i*self.patch_size:i*self.patch_size+self.patch_size,j*self.patch_size:j*self.patch_size+self.patch_size])
+        
+        count = torch.zeros([self.height-patch_size[0]+1, self.width-patch_size[1]+1])
+        for i in range(0,count.shape[0]):
+            for j in range(0,count.shape[1]):
+                count[i,j] =0 
+                for x in range(i,i+patch_size[0]):
+                    for y in range(j,j+patch_size[1]):
+                        count[i,j] += patch_edg[x,y]
+        return count
         
     def _build_cdf_from_keypoints(self, img_path):
         superpoint_path = '/dsi/scratch/home/dsi/rinaVeler/datasets/superpoint/'
@@ -243,14 +262,15 @@ class MaskCollator(object):
         for b in range(B): 
                 
             n_kp_psize = self._count_matrix_from_keypoints(batch[b][2], p_size)
+            n_edg_psize = self._count_matrix_from_canny(batch[b][2], p_size)
             n_kp_esize = self._count_matrix_from_keypoints(batch[b][2], e_size)
             masks_p, masks_C = [], []
             for _ in range(self.npred):
-                case = 1 #torch.randint(0,2,(1,)) # To choosse only one method choose 1 or 0
+                case = torch.randint(0,2,(1,)) # To choosse only one method choose 1 or 0
                 if case == 1:
                     mask, mask_C = self._sample_block_mask_superpoints(p_size, n_kp_psize)
                 else:
-                    mask, mask_C = self._sample_block_mask(p_size)
+                    mask, mask_C = self._sample_block_mask_superpoints(p_size, n_edg_psize)
                 masks_p.append(mask)
                 masks_C.append(mask_C)
                 min_keep_pred = min(min_keep_pred, len(mask))
