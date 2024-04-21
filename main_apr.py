@@ -133,8 +133,13 @@ if __name__ == "__main__":
         checkpoint_prefix = join(utils.create_output_dir('out'),utils.get_stamp_from_log())
         n_total_samples = 0.0
         loss_vals = []
-        sample_count = []
+        sample_count = []        
+        n_total_samples_valid = 0.0
+        loss_vals_valid = []
+        sample_count_valid = []        
+        
         best_valid_loss = 1000000000
+        
         for epoch in range(n_epochs):
 
             # Resetting temporal loss used for logging
@@ -188,10 +193,14 @@ if __name__ == "__main__":
             if (epoch % n_freq_checkpoint) == 0 and epoch > 0:
                 torch.save(model.state_dict(), checkpoint_prefix + '_checkpoint-{}.pth'.format(epoch))
 
+            # Resetting temporal loss used for logging
+            running_loss = 0.0
+            n_samples = 0
+            valid_loss = 0
+
             #validation
             with torch.no_grad():
-                valid_loss = 0
-                for i, minibatch in enumerate(dataloader_valid, 0):
+                for batch_idx, minibatch in enumerate(dataloader_valid, 0):
                     for k, v in minibatch.items():
                         minibatch[k] = v.to(device).to(dtype=torch.float32)
                     gt_pose = minibatch.get('pose')
@@ -199,12 +208,29 @@ if __name__ == "__main__":
                     est_pose = model(minibatch).get('pose')
                     # Evaluate error
                     criterion = pose_loss_valid(est_pose, gt_pose)
-                    valid_loss += criterion.item()
-                    if i > 100:
+                    
+                    valid_loss += criterion.item()                    
+                    running_loss += criterion.item()                                        
+                    n_total_samples_valid += batch_size
+                    loss_vals_valid.append(criterion.item())
+                    sample_count_valid.append(n_total_samples)
+                    
+                     # Record loss and performance on train set
+                    if batch_idx % n_freq_print == 0:
+                        posit_err, orient_err = utils.pose_err(est_pose.detach(), gt_pose.detach())
+                        logging.info("[Validatin Batch-{}/Epoch-{}] running camera pose loss: {:.3f}, "
+                                    "camera pose error: {:.2f}[m], {:.2f}[deg]".format(
+                                                                            batch_idx+1, epoch+1, (running_loss/n_samples),
+                                                                            posit_err.mean().item(),
+                                                                            orient_err.mean().item()))
+                    
+                    if batch_idx > 100:
                         break
+                    
             if valid_loss < best_valid_loss:
+                logging.info("Saving Best checkpoint - Epoch-{}".format(epoch+1))
                 torch.save(model.state_dict(), checkpoint_prefix + '_checkpoint_best.pth')
-                best_valid_loss = valid_loss
+                best_valid_loss = valid_loss                
 
             # Scheduler update
             scheduler.step()
@@ -215,6 +241,8 @@ if __name__ == "__main__":
         # Plot the loss function
         loss_fig_path = checkpoint_prefix + "_loss_fig.png"
         utils.plot_loss_func(sample_count, loss_vals, loss_fig_path)
+        loss_fig_path = checkpoint_prefix + "_valid_loss_fig.png"
+        utils.plot_loss_func(sample_count_valid, loss_vals_valid, loss_fig_path)
 
     else: # Test
         # Set to eval mode
