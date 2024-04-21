@@ -134,7 +134,6 @@ if __name__ == "__main__":
         n_total_samples = 0.0
         loss_vals = []
         sample_count = []        
-        n_total_samples_valid = 0.0
         loss_vals_valid = []
         sample_count_valid = []        
         
@@ -211,7 +210,7 @@ if __name__ == "__main__":
                     
                     valid_loss += criterion.item()                    
                     running_loss += criterion.item()                                        
-                    n_total_samples_valid += batch_size
+                    n_samples += batch_size
                     loss_vals_valid.append(criterion.item())
                     sample_count_valid.append(n_total_samples)
                     
