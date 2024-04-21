@@ -230,12 +230,14 @@ if __name__ == "__main__":
             if valid_loss < best_valid_loss:
                 logging.info("Saving Best checkpoint - Epoch-{}".format(epoch+1))
                 torch.save(model.state_dict(), checkpoint_prefix + '_checkpoint_best.pth')
-                best_valid_loss = valid_loss                
+                best_valid_loss = valid_loss
+                best_epoch = epoch+1
+                                
 
             # Scheduler update
             scheduler.step()
 
-        logging.info('Training completed')
+        logging.info('Training completed, saving final model. Best checkpoint at epoch: {}'.format(best_epoch))
         torch.save(model.state_dict(), checkpoint_prefix + '_final.pth'.format(epoch))
 
         # Plot the loss function
