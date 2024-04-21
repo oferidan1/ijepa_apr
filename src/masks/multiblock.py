@@ -186,7 +186,7 @@ class MaskCollator(object):
         canny_path = '/dsi/scratch/home/dsi/rinaVeler/datasets/canny/'
         file_name = img_path.split(os.sep)[-3]+'_'+img_path.split(os.sep)[-2]+'_'+os.path.splitext(os.path.basename(img_path))[0]
         canny_name = canny_path + file_name + '.npy'
-        canny = np.load(canny_name, allow_pickle=True)
+        canny = torch.from_numpy(np.load(canny_name))
         patch_edg = torch.zeros(self.height, self.width)
         for i in range(self.height):
             for j in range(self.width):
